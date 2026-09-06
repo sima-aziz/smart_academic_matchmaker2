@@ -1,0 +1,205 @@
+<!-- ===== Navbar ===== -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container">
+        <button
+            id="themeToggle"
+            class="btn btn-sm btn-outline-secondary theme-toggle"
+            type="button"
+            aria-label="Toggle dark mode">
+            <span id="themeIcon">☀️</span>
+        </button>
+        <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">Smart Matchmaker</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}#how">كيف يعمل؟</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('about') }}">من نحن</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('faq') }}">الأسئلة الشائعة</a></li>
+                {% if session.get("user_id") %}
+                <li class="nav-item">
+                    
+                    <a class="nav-link position-relative" href="{{ url_for('chats') }}">
+                        💬 الدردشات
+
+                        {% if unread_messages > 0 %}
+                            <span class="badge bg-danger rounded-pill ms-1">
+                                {{ unread_messages }}
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            {% if session.get("user_id") %}
+                <div class="dropdown me-3">
+                    <a class="fw-bold text-decoration-none dropdown-toggle"
+                    href="#" role="button" data-bs-toggle="dropdown">
+                        مرحباً، {{ session.get("user_first_name") }}
+                    </a>
+                    <ul class="dropdown-menu text-end">
+                        <li class="dropdown-item text-muted small">
+                            {{ session.get("user_email") }}
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('profile') }}">
+                                الملف الشخصي
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                تسجيل الخروج
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-primary">
+                    تسجيل الخروج
+                </a>
+                <button class="btn btn-outline-secondary btn-outline-secondary-settings me-2"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#settingsSidebar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-login me-2">تسجيل الدخول</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">إنشاء حساب</a>
+            {% endif %}
+        </div>
+    </div> 
+</nav>
+
+<!--====== settings sidebar -->  
+{% if session.get("user_id") %}
+<div class="offcanvas offcanvas-start" tabindex="-1" id="settingsSidebar">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">الإعدادات</h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="offcanvas"> ✕ </button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="list-group">
+            <a href="{{ url_for('profile') }}" class="list-group-item">الملف الشخصي</a>
+            <a href="{{ url_for('preferences') }}" class="list-group-item">استبيان التفضيلات</a>
+            <a href="{{ url_for('match') }}" class="list-group-item">بدأ المطابقة / عرض نتائج المطابقة</a>
+            <a href="{{ url_for('requests') }}" class="list-group-item">عرض الطلبات</a>
+            {% if session.get("user_id") %}
+                    
+                <a class="list-group-item" href="{{ url_for('chats') }}">
+                      الدردشات
+
+                    {% if unread_messages > 0 %}
+                        <span class="badge bg-danger rounded-pill ms-1">
+                            {{ unread_messages }}
+                        </span>
+                    {% endif %}
+                </a>
+                <p></p>
+                <button class="btn btn-outline-danger w-100"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteAccountModal">
+                    Delete My Account
+                </button>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Account Window -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">Delete Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+        <form method="POST" action="{{ url_for('delete_account') }}" class="px-3 py-2">
+
+            <div class="alert alert-danger rounded-3 mb-4">
+                ⚠️ <strong>تحذير هام:</strong> هذا الإجراء نهائي ولا يمكن التراجع عنه.
+                <div class="mt-2">سيتم حذف البيانات التالية بشكل دائم:</div>
+                <ul class="mb-0 mt-2">
+                    <li>ملفك الشخصي</li>
+                    <li>تفضيلاتك</li>
+                    <li>جميع الدردشات والرسائل</li>
+                    <li>جميع طلبات التعاون</li>
+                </ul>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">أدخل كلمة المرور للتأكيد:</label>
+                <input type="password"
+                    name="password"
+                    id="deletePassword"
+                    class="form-control {% if delete_error %}is-invalid{% endif %}"
+                    required>
+
+                {% if delete_error %}
+                <div class="invalid-feedback">
+                    كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-check mb-4">
+                <input class="form-check-input"
+                    type="checkbox"
+                    id="confirmDelete">
+                <label class="form-check-label">
+                    أؤكد أنني أفهم أن هذا الإجراء غير قابل للاسترجاع
+                </label>
+            </div>
+
+            <div class="modal-footer px-0">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    إلغاء
+                </button>
+
+                <button type="submit"
+                        id="deleteBtn"
+                        class="btn btn-danger"
+                        disabled>
+                    حذف الحساب نهائياً
+                </button>
+            </div>
+
+        </form>
+
+
+    </div>
+  </div>
+</div>
+
+
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000; margin-top: 80px;">
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+        <div class="toast align-items-center text-bg-primary border-0 position-fixed bottom-0 end-0 m-3"
+             role="alert" data-bs-delay="3000">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+                <button type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        
+
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+</div>
+
+
+

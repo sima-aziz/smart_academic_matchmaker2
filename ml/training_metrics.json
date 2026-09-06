@@ -1,0 +1,10 @@
+{
+    "dataset_size": 10000,
+    "training_samples": 8000,
+    "testing_samples": 2000,
+    "accuracy": 0.5675,
+    "precision": 0.5476190476190477,
+    "recall": 0.48677248677248675,
+    "f1_score": 0.5154061624649859,
+    "roc_auc": 0.6053215978334462
+}

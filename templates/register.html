@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>إنشاء حساب جديد | Smart Academic Matchmaker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+
+{% include "layout/navbar.html" %}
+
+{% set errors = {} %}
+{% for category, message in get_flashed_messages(with_categories=true) %}
+    {% set _ = errors.update({category: message}) %}
+{% endfor %}
+
+
+<!-- ===== Register Section ===== -->
+<section class="register-section d-flex align-items-center justify-content-center py-5 mt-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+
+                        <h3 class="text-center fw-bold mb-3">إنشاء حساب جديد</h3>
+                        <p class="text-center text-muted mb-4">
+                            أدخل بياناتك لإنشاء حساب جديد
+                        </p>
+
+                        {% if error %}
+                        <div class="alert alert-danger text-center">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+                        <form onsubmit="return validatePasswords();" method="POST" action="{{ url_for('register') }}">
+
+                            <!-- First Name -->
+                            <div class="mb-3">
+                                <label class="form-label">الاسم الأول</label>
+                                <input
+                                    type="text"
+                                    name="first_name"
+                                    class="form-control"
+                                    placeholder="مثال: Sima"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="mb-3">
+                                <label class="form-label">اسم العائلة</label>
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    class="form-control"
+                                    placeholder="مثال: Aziz"
+                                    required
+                                >
+                            </div>
+
+
+                            <!-- Email -->
+                            <div class="mb-3">
+                                <label class="form-label">البريد الإلكتروني</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    class="form-control"
+                                    placeholder="example@gmail.com"
+                                    required
+                                >
+                            </div>
+
+
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label class="form-label">كلمة المرور</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    class="form-control {% if errors.email_error %}is-invalid{% endif %}"
+                                    id="password"
+                                    placeholder="********"
+                                    required
+                                >
+                                {% if errors.password_error %}
+                                    <small class="text-danger">
+                                        {{ errors.password_error }}
+                                    </small>
+                                {% else %}
+                                    <small class="text-muted">
+                                        Password must at least contain 8 characters.
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="mb-3">
+                                <label class="form-label">تأكيد كلمة المرور</label>
+                                <input
+                                    type="password"
+                                    name="confirm_password"
+                                    class="form-control"
+                                    id="confirmPassword"
+                                    placeholder="********"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    إنشاء الحساب
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Links -->
+                        <p class="text-center mb-1">
+                            لديك حساب بالفعل؟
+                            <a href="{{ url_for('login') }}" class="fw-bold text-decoration-none">
+                                تسجيل الدخول
+                            </a>
+                        </p>
+
+                        <p class="text-center">
+                            <a href="{{ url_for('home') }}" class="text-decoration-none">
+                                ← العودة إلى الصفحة الرئيسية
+                            </a>
+                        </p>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% include "layout/footer.html" %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const form = document.querySelector("form");
+    const password = document.getElementById("password");
+    const confirmPassword = document.getElementById("confirmPassword");
+
+    // create error element dynamically
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "invalid-feedback";
+    confirmPassword.parentNode.appendChild(errorDiv);
+
+    form.addEventListener("submit", function (e) {
+
+        // reset state
+        confirmPassword.classList.remove("is-invalid");
+        errorDiv.textContent = "";
+
+        if (password.value !== confirmPassword.value) {
+            e.preventDefault(); // stop submission
+
+            confirmPassword.classList.add("is-invalid");
+            errorDiv.textContent = "كلمتا المرور غير متطابقتين";
+        }
+    });
+
+    // real-time validation
+    confirmPassword.addEventListener("input", function () {
+        confirmPassword.classList.remove("is-invalid");
+        errorDiv.textContent = "";
+    });
+
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!--Include Base Java file-->
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+
+
+</body>
+</html>
+

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+{% include "layout/navbar.html" %}
+
+
+{% include "layout/footer.html" %}
+
+
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<!-- THEME SCRIPT (GLOBAL) -->
+<script>
+(function () {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+    }
+})();
+</script>
+
+</body>
+</html>

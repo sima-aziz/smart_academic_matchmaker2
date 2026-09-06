@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>استبيان التفضيلات | Smart Matchmaker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- To Crop Images -->
+    <link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet">
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+
+</head>
+<body>
+
+{% include "layout/navbar.html" %}
+
+<section class="preferences-section">
+    <div class="container mt-5 pt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+
+                        <h3 class="text-center fw-bold mb-4">استبيان التفضيلات</h3>
+                        <form method="POST" enctype="multipart/form-data"  id="preferencesForm" novalidate>
+
+                            <!-- ================= Personal Info ================= -->
+                            <h5 class="section-title">المعلومات الشخصية</h5>
+
+
+
+                            <!-- Name (prefilled) -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="first_name">الاسم الأول</label>
+                                    <input type="text"
+                                        id="first_name"
+                                        name="first_name"
+                                        class="form-control"
+                                        value="{{ user.first_name }}"
+                                        readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="last_name">اسم العائلة</label>
+                                    <input type="text"
+                                        id="last_name"
+                                        name="last_name"
+                                        class="form-control"
+                                        value="{{ user.last_name }}"
+                                        readonly>
+                                </div>
+                            </div>
+
+                            <!-- Age & Gender -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">العمر</label>
+                                    <input type="number"
+                                    class="form-control"
+                                    name="age"
+                                    min="18" max="60"
+                                    value="{{ preferences.age if preferences else '' }}"
+                                    required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">الجنس</label>
+                                    <select class="form-select" name="gender" required>
+                                        <option value="">اختر</option>
+                                        <option  value="male" {% if preferences and preferences.gender == 'male' %}selected{% endif %} >ذكر</option>
+                                        <option value="female" {% if preferences and preferences.gender == 'female' %}selected{% endif %} >أنثى</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Phone -->
+                            <label class="form-label">
+                                رقم للتواصل <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="input-group">
+                                <input type="tel" class="form-control" name="phone" placeholder="9XXXXXXXX" value="{{ preferences.phone[4:] if preferences else '' }}" required>
+                                <select class="form-select" name="country_code" style="max-width:120px" required>
+                                    <option value="+963" {% if preferences and preferences.country_code == '+963' %}selected{% endif %} >SY +963</option>
+                                    <option value="+49" {% if preferences and preferences.country_code == '+49' %}selected{% endif %} >DE +49</option>
+                                    <option value="+1" {% if preferences and preferences.country_code == '+1' %}selected{% endif %} >US +1</option>
+                                    <option value="+20" {% if preferences and preferences.country_code == '+20' %}selected{% endif %} >EG +20</option>
+                                    <option value="+7" {% if preferences and preferences.country_code == '+7' %}selected{% endif %} >RU +7</option>
+                                </select>
+                            </div>
+
+                            <!-- ================= Academic Info ================= -->
+                            <h5 class="section-title mt-4">المعلومات الأكاديمية</h5>
+
+                            <!-- University -->
+                            <div class="mb-3">
+                                <label class="form-label">الجامعة <span class="text-danger">*</span></label>
+                                <select class="form-select" name="university" required>
+                                    <option value="Syrian Virtual University"
+                                        {% if preferences and preferences.university == 'Syrian Virtual University' %}selected{% endif %}>
+                                        الجامعة الافتراضية السورية</option>
+                                    <option value="Other"
+                                        {% if preferences and preferences.university == 'Other' %}selected{% endif %} >جامعة أخرى</option>
+                                </select>
+                            </div>
+
+                            <!-- Commitment -->
+                            <div class="mb-3">
+                                <label class="form-label">ساعات التفرّغ للعمل
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" name="commitment_level" required>
+                                    <option value="" >اختر</option>
+                                    <option value="1" {% if preferences and preferences.commitment_level == '1' %}selected{% endif %}>متفرّغ فقط قبل التسليم</option>
+                                    <option value="2" {% if preferences and preferences.commitment_level == '2' %}selected{% endif %}>العمل مرة أسبوعياً</option>
+                                    <option value="3" {% if preferences and preferences.commitment_level == '3' %}selected{% endif %}>عدة مرات أسبوعياً</option>
+                                    <option value="4" {% if preferences and preferences.commitment_level == '4' %}selected{% endif %}>يومياً</option>
+                                    <option value="5" {% if preferences and preferences.commitment_level == '5' %}selected{% endif %}>متفرغ بالكامل</option>
+
+                                </select>
+                            </div>
+
+                            <!-- GPA -->
+                            <div class="mb-3">
+                                <label class="form-label">المعدل التراكمي (GPA)
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                step="0.25" min="0" max="4"
+                                class="form-control" name="gpa" 
+                                value="{{ preferences.gpa if preferences else '' }}"
+                                required>
+                            </div>
+
+                            <!-- Program -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    البرنامج
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" name="program" required>
+                                    <option value="ITE" {% if preferences and preferences.program == 'ITE' %}selected{% endif %}>ITE | Information Technology Engineering</option>
+                                </select>
+                            </div>
+
+                            <!-- Semester & Year -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">الفصل الدراسي</label>
+                                    <select class="form-select" name="semester" required>
+                                        <option value="S25"
+                                        {% if preferences and preferences.semester == 'S25' %}selected{% endif %}>
+                                        S25
+                                        </option>
+                                        <option value="F24"
+                                        {% if preferences and preferences.semester == 'F24' %}selected{% endif %}>
+                                        F24
+                                        </option>
+                                        <option value="S24"
+                                        {% if preferences and preferences.semester == 'S24' %}selected{% endif %}>
+                                        S24
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">السنة الدراسية <span class="text-danger">*</span></label>
+
+                                        <select class="form-select" name="academic_year" id="academicYearSelect" required>
+                                            <option value="">-- اختر السنة --</option>
+                                            <option value="1" {% if preferences and preferences.academic_year == 1 %}selected{% endif %}>السنة الأولى</option>
+                                            <option value="2" {% if preferences and preferences.academic_year == 2 %}selected{% endif %}>السنة الثانية</option>
+                                            <option value="3" {% if preferences and preferences.academic_year == 3 %}selected{% endif %}>السنة الثالثة</option>
+                                            <option value="4" {% if preferences and preferences.academic_year == 4 %}selected{% endif %}>السنة الرابعة</option>
+                                            <option value="5" {% if preferences and preferences.academic_year == 5 %}selected{% endif %}>السنة الخامسة</option>
+                                        </select>
+
+                                </div>
+                            </div>
+
+                            <!-- ================= Courses ================= -->
+                            <h5 class="section-title mt-4">المادة والصف</h5>
+
+                            <p id="courseHint" class="text-muted small mb-3">
+                                الرجاء اختيار <strong>البرنامج</strong> و<strong>السنة الدراسية</strong> أولاً لعرض خيارات المواد.
+                            </p>
+
+                            <div id="courseContainer" class="course-list"></div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    حفظ التفضيلات
+                                </button>
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<script id="saved-courses-data" type="application/json">
+  {{ courses_map | tojson }}
+</script>
+
+<script>
+  const savedCourses = JSON.parse(
+    document.getElementById("saved-courses-data").textContent
+  );
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const coursesByYear = {
+    1: [
+      ["BPH401","Physics"],
+      ["BMA401","Mathematical Analysis I"],
+      ["BAS401","Algebraic Structures"],
+      ["BPG401","Programming I"],
+      ["GEN301","English Language I"],
+      ["GTW301","Communications Skills and Technical Writing"],
+      ["BLA401","Linear Algebra"],
+      ["BMA402","Mathematical Analysis II"],
+      ["BEC401","Electronic Circuits"],
+      ["BLC401","Logical Circuits"],
+      ["BPG402","Programming II"],
+      ["GEN401","English Language II"],
+    ],
+    2: [
+      ["BNA401","Numerical Analysis"],
+      ["BWP401","Web Programming I"],
+      ["BCA501","Computer Architecture I"],
+      ["BSP501","Signal Processing"],
+      ["BDA501","Data Structures and Algorithms I"],
+      ["GEN501","English Language III"],
+      ["GMN401","Fundamentals of Management"],
+      ["BDM501","Discrete Mathematics"],
+      ["BTS501","Telecommunication Systems"],
+      ["BDB501","Database Systems I"],
+      ["BDBL501","Database Systems Lab I"],
+      ["BWP501","Web Programming II"],
+      ["GEN502","English Language IV"],
+    ],
+    3: [
+      ["GAC501","Accounting"],
+      ["BPS601","Probability & Statistics"],
+      ["BOS501","Operating Systems I"],
+      ["BOSL501","Operating Systems Lab I"],
+      ["BAU501","Automata & Formal Languages"],
+      ["BPG601","Programming III"],
+      ["GEN601","English Language V"],
+      ["BAI501","Artificial Intelligence"],
+      ["BNT501","Computer Networks I"],
+      ["BSE601","Software Engineering I"],
+      ["BCM601","Compilers"],
+      ["BCG601","Computer Graphics"],
+    ],
+    4: [
+      ["GPM601","IT Project Management"],
+      ["BIA601","Intelligent Algorithms"],
+      ["BMP601","Mobile Applications Programming"],
+      ["BID601","Information Systems Analysis and Design"],
+      ["BMM601","Multimedia Systems"],
+      ["GET601","Ethics of Profession & Society"],
+      ["MDA601","Big Data Analysis"],
+      ["AIP601","Digital Image Processing"],
+      ["ANN601","Neural Networks & Fuzzy Logic"],
+      ["BPR601","Project I"],
+    ],
+    5: [
+      ["BIS601","Information System Security"],
+      ["ACV601","Computer Vision"],
+      ["ANL601","Natural Language Processing"],
+      ["AML601","Machine Learning"],
+      ["GEP601","Epistemology & Computer Science"],
+      ["BSM601","Simulation, Modelling and Verification"],
+      ["SIR601","Information Retrieval"],
+      ["MBC601","Internet of Things and Block Chaining"],
+      ["MDL601","Deep Learning"],
+      ["BPR602","Project II"],
+    ]
+  };
+
+    const yearSelect = document.getElementById("academicYearSelect");
+    const container = document.getElementById("courseContainer");
+
+    function bindCourseEvents() {
+
+        document.querySelectorAll(".course-checkbox").forEach(cb => {
+            cb.addEventListener("change", function () {
+
+                const box = document.querySelector(
+                    `.course-options[data-course="${this.value}"]`
+                );
+
+                if (!box) return;
+
+                box.classList.toggle("d-none", !this.checked);
+
+                box.querySelectorAll("select").forEach(sel => {
+                    sel.disabled = !this.checked;
+                });
+
+                if (this.checked) {
+                    const crossSelect = box.querySelector('select[name^="cross_section"]');
+                    const sectionBox = box.querySelector(".section-box");
+
+                    sectionBox.classList.toggle("d-none", crossSelect.value !== "0");
+                }
+            });
+        });
+
+        document.querySelectorAll('select[name^="cross_section"]').forEach(select => {
+            select.addEventListener("change", function () {
+                const sectionBox = this
+                    .closest(".course-options")
+                    .querySelector(".section-box");
+
+                sectionBox.classList.toggle("d-none", this.value !== "0");
+            });
+        });
+    }
+
+    function renderCourses(year) {
+
+        container.innerHTML = "";
+
+        if (!year || !coursesByYear[year]) return;
+
+        coursesByYear[year].forEach(([code, name]) => {
+
+            container.innerHTML += `
+                <div class="course-card mb-3 p-3 border rounded">
+                    <div class="form-check">
+                        <input class="form-check-input course-checkbox"
+                               type="checkbox"
+                               name="courses[]"
+                               value="${code}"
+                               id="course_${code}">
+                        <label class="form-check-label fw-bold" for="course_${code}">
+                            ${code} — ${name}
+                        </label>
+                    </div>
+
+                    <div class="course-options d-none mt-2" data-course="${code}">
+                        <div class="mb-2">
+                            <label class="form-label">هل يسمح التعاون بين الصفوف؟</label>
+                            <select class="form-select"
+                                    name="cross_section[${code}]"
+                                    disabled>
+                                <option value="1">نعم</option>
+                                <option value="0">لا</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2 section-box d-none">
+                            <label class="form-label">الصف</label>
+                            <select class="form-select"
+                                    name="section[${code}]"
+                                    disabled>
+                                ${Array.from({length:20},(_,i)=>
+                                    `<option value="C${i+1}">C${i+1}</option>`
+                                ).join("")}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        bindCourseEvents();
+    }
+
+    yearSelect.addEventListener("change", function () {
+        renderCourses(this.value);
+    });
+
+    // Important: render on page load if year already selected
+    if (yearSelect.value) {
+        renderCourses(yearSelect.value);
+    }
+
+});
+
+
+
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const form = document.getElementById("preferencesForm");
+
+    form.addEventListener("submit", function (e) {
+
+        let isValid = true;
+
+        // remove old validation
+        form.querySelectorAll(".is-invalid").forEach(el => {
+            el.classList.remove("is-invalid");
+        });
+
+        // Validate text/select/number
+        form.querySelectorAll("input[required], select[required], textarea[required]").forEach(field => {
+
+            if (field.type === "checkbox" || field.type === "radio") return;
+
+            if (!field.value || field.value.trim() === "") {
+                field.classList.add("is-invalid");
+                isValid = false;
+            }
+        });
+
+        // Validate courses checkboxes
+        const courseCheckboxes = form.querySelectorAll('input[name="courses[]"]');
+        const anyCourseSelected = Array.from(courseCheckboxes).some(cb => cb.checked);
+
+        if (!anyCourseSelected) {
+            isValid = false;
+
+            const container = document.getElementById("courseContainer");
+            container.classList.add("border", "border-danger", "p-2", "course-error");
+
+            if (!document.getElementById("courseError")) {
+                const error = document.createElement("div");
+                error.id = "courseError";
+                error.className = "text-danger mt-2";
+                error.innerText = "يجب اختيار مادة واحدة على الأقل";
+                container.appendChild(error);
+            }
+        }
+
+        // Prevent submission + Scroll
+        if (!isValid) {
+            e.preventDefault();
+
+            const firstError = form.querySelector(".is-invalid") 
+                || document.querySelector(".border-danger");
+
+            if (firstError) {
+                firstError.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                if (typeof firstError.focus === "function") {
+                    setTimeout(() => firstError.focus(), 400);
+                }
+            }
+        }
+
+    });
+
+    // Remove error on input
+    form.addEventListener("input", function (e) {
+        if (e.target.classList.contains("is-invalid")) {
+            e.target.classList.remove("is-invalid");
+        }
+    });
+
+    form.addEventListener("change", function (e) {
+
+        if (e.target.type === "checkbox") {
+
+            const courseCheckboxes = form.querySelectorAll('input[name="courses[]"]');
+            const anyCourseSelected = Array.from(courseCheckboxes).some(cb => cb.checked);
+
+            if (anyCourseSelected) {
+                const container = document.getElementById("courseContainer");
+                container.classList.remove("border", "border-danger");
+
+                const error = document.getElementById("courseError");
+                if (error) error.remove();
+            }
+        }
+
+        if (e.target.classList.contains("is-invalid")) {
+            e.target.classList.remove("is-invalid");
+        }
+
+    });
+
+});
+</script>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!--Include Base Java file-->
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% include "layout/footer.html" %}
+</body>
+</html>

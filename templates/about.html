@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>من نحن | Smart Academic Matchmaker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        .hero {
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+
+{% include "layout/navbar.html" %}
+
+
+<!-- ===== Hero ===== -->
+<section class="hero text-center mt-5">
+    <div class="container">
+        <h1 class="fw-bold">من نحن</h1>
+        <p class="lead mt-3">
+            منصّة أكاديمية ذكية تهدف إلى تحسين تجربة العمل الجماعي بين طلاب الجامعات الافتراضية
+        </p>
+    </div>
+</section>
+
+<!-- ===== About Content ===== -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col text-center">
+                <h2 class="fw-bold mb-3">نبذة عن المنصّة</h2>
+                <p class="text-muted">
+                    Smart Academic Matchmaker هي منصّة إلكترونية تم تطويرها لمساعدة طلاب الجامعات،
+                    وخاصة طلاب التعليم عن بعد، على إيجاد شركاء أكاديميين متوافقين من حيث
+                    التخصص، أسلوب العمل، والالتزام الزمني، وذلك باستخدام آلية مطابقة ذكية.
+                </p>
+            </div>
+        </div>
+
+        <div class="row text-center">
+            <!-- Vision -->
+            <div class="col-md-4 mb-4">
+                <div class="icon mb-3">🎯</div>
+                <h5 class="fw-bold">رؤيتنا</h5>
+                <p>
+                    تحسين جودة التعاون الأكاديمي وتقليل مشاكل العمل الجماعي
+                    في بيئات التعليم الافتراضي.
+                </p>
+            </div>
+
+            <!-- Mission -->
+            <div class="col-md-4 mb-4">
+                <div class="icon mb-3">🚀</div>
+                <h5 class="fw-bold">رسالتنا</h5>
+                <p>
+                    توفير منصّة ذكية وآمنة تربط الطلاب المناسبين ببعضهم
+                    لدعم النجاح الأكاديمي المشترك.
+                </p>
+            </div>
+
+            <!-- Values -->
+            <div class="col-md-4 mb-4">
+                <div class="icon mb-3">🔐</div>
+                <h5 class="fw-bold">قيمنا</h5>
+                <p>
+                    العدالة في المطابقة، الخصوصية، الموثوقية،
+                    والدعم الأكاديمي المستمر.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Target Users ===== -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-4">لمن هذه المنصّة؟</h2>
+        <div class="row text-center">
+            <div class="col-md-4 mb-3">👩‍🎓 طلاب الجامعات الافتراضية</div>
+            <div class="col-md-4 mb-3">🧑‍💻 طلاب المشاريع الجماعية</div>
+            <div class="col-md-4 mb-3">📚 طلاب التعليم عن بعد</div>
+        </div>
+    </div>
+</section>
+
+{% include "layout/footer.html" %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!--Include Base Java file-->
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+</body>
+</html>

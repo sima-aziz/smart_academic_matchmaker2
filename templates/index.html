@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title> المطابق الذكي| Smart Academic Matchmaker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        .hero {
+            color: white;
+            padding: 80px 0;
+        }
+
+        .card-body:hover{
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(95,108,175,0.25);
+
+        }
+        
+    </style>
+</head>
+
+<body>
+{% include "layout/navbar.html" %}    
+
+<!-- ===== Hero Section ===== -->
+<section class="hero text-center mt-5 ">
+    <div class="container">
+        <h1 class="fw-bold mb-3">اعثر على الشريك الأكاديمي الأنسب لك بذكاء</h1>
+        <p class="lead mb-4">
+            منصّة ذكية لربط طلاب الجامعات الافتراضية بشركاء متوافقين أكاديميًا وشخصيًا
+        </p>
+            <a href="{{ url_for('start') }}" class="btn btn-light btn-lg me-2">
+                ابدأ الآن
+            </a>
+        <a href="{{ url_for('home') }}#how" class="btn btn-outline-light btn-lg">كيف يعمل؟</a>
+    </div>
+</section>
+
+<!-- ===== How It Works ===== -->
+<section id="how" class="py-5">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-5">كيف يعمل النظام؟</h2>
+        <div class="row text-center">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <a href="/register" class="card-body">
+                        <div class="feature-icon mb-3">📝</div>
+                        <h5 class="fw-bold">إنشاء حساب</h5>
+                        <p>إنشاء حساب وإدخال البيانات الأكاديمية الأساسية</p>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <a href="/preferences" class="card-body">
+                        <div class="feature-icon mb-3">📊</div>
+                        <h5 class="fw-bold">استبيان التفضيلات</h5>
+                        <p>تحديد أسلوب العمل، الوقت المتاح، ونوع المشاريع</p>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <a href="/match" class="card-body">
+                        <div class="feature-icon mb-3">🤝</div>
+                        <h5 class="fw-bold">أفضل المطابقات</h5>
+                        <p>الحصول على شركاء متوافقين وإرسال دعوات التعاون</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== Features ===== -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center fw-bold mb-5">لماذا Smart Academic Matchmaker؟</h2>
+        <div class="row justify-content-center text-center">
+            <div class="col-md-10"> 
+                <div class="row">
+                    <div class="col-md-6 col-lg-5 mb-3 d-flex justify-content-center">
+                        <span class="me-2">✔</span> مطابقة ذكية تعتمد على معايير متعددة
+                    </div>
+                    <div class="col-md-6 col-lg-5 mb-3 d-flex justify-content-center">
+                        <span class="me-2">✔</span> مخصص لطلاب التعليم عن بعد
+                    </div>
+                    <div class="col-md-6 col-lg-5 mb-3 d-flex justify-content-center">
+                        <span class="me-2">✔</span> تحسين العمل الجماعي الأكاديمي
+                    </div>
+                    <div class="col-md-6 col-lg-5 mb-3 d-flex justify-content-center">
+                        <span class="me-2">✔</span> نظام دعوات وقبول متبادل
+                    </div>
+                    <div class="col-md-6 col-lg-5 mb-3 d-flex justify-content-center">
+                        <span class="me-2">✔</span> إشراف إداري وحماية المستخدمين
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===== CTA ===== -->
+<section class="py-5 text-center">
+    <div class="container">
+        <h2 class="fw-bold mb-3">لا تعمل وحدك بعد اليوم</h2>
+        <p class="mb-4">ابدأ رحلتك الأكاديمية الذكية الآن</p>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">إنشاء حساب مجاني</a>
+    </div>
+</section>
+
+{% include "layout/footer.html" %}
+
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!--Include Base Java file-->
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+
+</body>
+</html>
