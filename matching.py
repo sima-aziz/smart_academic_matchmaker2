@@ -240,8 +240,73 @@ def ml_compatibility_probability(
         features["year_similarity"]
     )
 
+
     return probability
 
+
+def normalized_rule_score(
+    p1,
+    p2,
+    weights
+):
+    rule_score = compatibility_score(
+        p1,
+        p2,
+        weights
+    )
+
+    max_rule_score = (
+        weights["courses"]
+        + weights["gpa"]
+        + weights["commitment"]
+        + weights["age"]
+        + weights["year"]
+    )
+
+    if max_rule_score <= 0:
+        return 0.0
+
+    normalized_score = (
+        rule_score
+        / max_rule_score
+    )
+
+    return max(
+        0.0,
+        min(
+            1.0,
+            normalized_score
+        )
+    )
+
+
+def hybrid_compatibility_score(
+    p1,
+    p2,
+    weights
+):
+    rule_score = normalized_rule_score(
+        p1,
+        p2,
+        weights
+    )
+
+    ml_probability = (
+        ml_compatibility_probability(
+            p1,
+            p2
+        )
+    )
+
+    hybrid_score = (
+        0.50 * rule_score
+        + 0.50 * ml_probability
+    )
+
+    return round(
+        hybrid_score,
+        4
+    )
 
 # Find matches
 def find_matches(
@@ -281,10 +346,10 @@ def find_matches(
     return matches
 
 
-# Find ML-assisted matches
-def find_ml_matches(
+def find_hybrid_matches(
     current_pref,
-    all_prefs
+    all_prefs,
+    weights
 ):
 
     matches = []
@@ -294,29 +359,31 @@ def find_ml_matches(
         if pref.user_id == current_pref.user_id:
             continue
 
-        # Hard rule-based eligibility layer
-        shared_courses = count_valid_shared_courses(
-            current_pref,
-            pref
+        shared_courses = (
+            count_valid_shared_courses(
+                current_pref,
+                pref
+            )
         )
 
         if shared_courses == 0:
             continue
 
-        # Project 2 ML probability
-        probability = ml_compatibility_probability(
-            current_pref,
-            pref
+        hybrid_score = (
+            hybrid_compatibility_score(
+                current_pref,
+                pref,
+                weights
+            )
         )
 
         matches.append(
             (
                 pref,
-                probability
+                hybrid_score
             )
         )
 
-    # Higher ML probability first
     matches.sort(
         key=lambda x: x[1],
         reverse=True

@@ -20,7 +20,7 @@ from models import (db, Preferences,  User,
                     Course, PreferenceCourse,
                     Report, ReportMessage, Block, AlgorithmSettings, seed_algorithm_settings)
 
-from matching import find_ml_matches
+from matching import find_hybrid_matches
 from sqlalchemy import func
 from itsdangerous import URLSafeTimedSerializer
 from datetime import datetime, timedelta
@@ -194,6 +194,40 @@ def is_blocked_between(user1_id, user2_id):
             db.and_(Block.blocker_id == user2_id, Block.blocked_id == user1_id)
         )
     ).first() is not None
+
+def get_matching_weights():
+
+    settings = (
+        AlgorithmSettings.query.first()
+    )
+
+    if not settings:
+
+        seed_algorithm_settings()
+
+        settings = (
+            AlgorithmSettings.query.first()
+        )
+
+    return {
+        "gpa":
+            settings.gpa_weight,
+
+        "commitment":
+            settings.commitment_weight,
+
+        "age":
+            settings.age_weight,
+
+        "year":
+            settings.year_weight,
+
+        "courses":
+            settings.courses_weight,
+
+        "max_courses":
+            settings.max_courses
+    }
 
 
 def admin_required(view):
@@ -753,7 +787,7 @@ def api_academic_info():
 @app.route("/api/matches", methods=["GET"])
 @jwt_required()
 def api_matches():
-    """Return the website's hybrid-ML matches as JSON for Android."""
+    """Return the 50/50 hybrid matches as JSON for Android."""
 
     try:
         user_id = int(get_jwt_identity())
@@ -783,9 +817,12 @@ def api_matches():
             "message": "Please complete your preferences first."
         }), 409
 
-    matches = find_ml_matches(
+    weights = get_matching_weights()
+
+    matches = find_hybrid_matches(
         user.preferences,
-        Preferences.query.all()
+        Preferences.query.all(),
+        weights
     )
 
     related_requests = CollaborationRequest.query.filter(
@@ -804,7 +841,7 @@ def api_matches():
 
     result = []
 
-    for preference, probability in matches:
+    for preference, hybrid_score in matches:
         if is_blocked_between(user.id, preference.user_id):
             continue
 
@@ -818,8 +855,11 @@ def api_matches():
             "semester": preference.semester,
             "academic_year": preference.academic_year,
             "commitment_level": preference.commitment_level,
-            "compatibility_probability": probability,
-            "compatibility_percent": round(probability * 100, 1),
+            "compatibility_probability": hybrid_score,
+            "compatibility_percent": round(
+                hybrid_score * 100,
+                1
+            ),
             "request": None if collaboration_request is None else {
                 "id": collaboration_request.id,
                 "status": collaboration_request.status,
@@ -2164,24 +2204,25 @@ def match():
 
     all_prefs = Preferences.query.all()
 
-    # Project II hybrid matcher:
-    # rule-based eligibility + ML ranking
-    matches = find_ml_matches(
+    weights = get_matching_weights()
+
+    matches = find_hybrid_matches(
         user.preferences,
-        all_prefs
+        all_prefs,
+        weights
     )
 
     # Remove blocked users
     filtered_matches = []
 
-    for pref, probability in matches:
+    for pref, hybrid_score in matches:
 
         if not is_blocked_between(
             user.id,
             pref.user_id
         ):
             filtered_matches.append(
-                (pref, probability)
+                (pref, hybrid_score)
             )
 
     matches = filtered_matches
