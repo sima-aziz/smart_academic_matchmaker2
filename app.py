@@ -2551,6 +2551,28 @@ def send_request(receiver_id):
     )
 
     db.session.add(req)
+    db.session.flush()
+
+
+    sender = db.session.get(
+        User,
+        sender_id
+    )
+
+
+    create_user_notification(
+        user_id=receiver_id,
+        notification_type="request_received",
+        title="طلب تعاون جديد",
+        body=(
+            f"{sender.first_name} "
+            f"{sender.last_name} "
+            "أرسل لك طلب تعاون."
+        ),
+        request_id=req.id
+    )
+
+
     db.session.commit()
 
     flash("تم إرسال طلب التعاون بنجاح", "success")
@@ -2594,6 +2616,27 @@ def accept_request(request_id):
         return redirect(url_for("requests"))
 
     req.status = "accepted"
+
+
+    accepting_user = db.session.get(
+        User,
+        user_id
+    )
+
+
+    create_user_notification(
+        user_id=req.sender_id,
+        notification_type="request_accepted",
+        title="تم قبول طلب التعاون",
+        body=(
+            f"{accepting_user.first_name} "
+            f"{accepting_user.last_name} "
+            "وافق على طلب التعاون."
+        ),
+        request_id=req.id
+    )
+
+
     db.session.commit()
 
     flash("تم قبول طلب التعاون", "success")
@@ -2673,6 +2716,27 @@ def chat_room(chat_id):
             )
             chat.last_activity = db.func.now()
             db.session.add(msg)
+
+
+            sender = db.session.get(
+                User,
+                user_id
+            )
+
+
+            create_user_notification(
+                user_id=other_user.id,
+                notification_type="message",
+                title=(
+                    f"رسالة جديدة من "
+                    f"{sender.first_name} "
+                    f"{sender.last_name}"
+                ),
+                body=content[:120],
+                chat_id=chat.id
+            )
+
+
             db.session.commit()
             return redirect(url_for("chat_room", chat_id=chat.id))
 
