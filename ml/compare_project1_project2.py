@@ -43,14 +43,14 @@ TARGET = "successful_collaboration"
 
 # Project 1 default weights
 WEIGHTS = {
-    "courses": 40,
-    "gpa": 35,
-    "commitment": 10,
-    "age": 5,
+    "courses": 35,
+    "gpa": 25,
+    "commitment": 20,
+    "age": 10,
     "year": 10
 }
 
-PROJECT1_MAX_COURSES = 3
+PROJECT1_MAX_COURSES = 5
 
 
 # Project 1 score reconstruction
@@ -157,9 +157,10 @@ def create_ranking_records(df):
     """
     Each pair is symmetric.
 
-    A pair (student 1, student 2) is therefore represented
-    from both students' perspectives so that ranking agreement
-    can be measured.
+    A pair (student 1, student 2) is represented
+    from both students' perspectives so that ranking
+    agreement between Project 1 and the final hybrid
+    Project 2 score can be measured.
     """
 
     records = []
@@ -171,7 +172,8 @@ def create_ranking_records(df):
             "student": int(row["student_1_id"]),
             "candidate": int(row["student_2_id"]),
             "project1_score": row["project1_score"],
-            "project2_probability": row["project2_probability"]
+            "project2_probability": row["project2_probability"],
+            "hybrid_score": row["hybrid_score"]
         })
 
         # Student 2 sees Student 1
@@ -179,7 +181,8 @@ def create_ranking_records(df):
             "student": int(row["student_2_id"]),
             "candidate": int(row["student_1_id"]),
             "project1_score": row["project1_score"],
-            "project2_probability": row["project2_probability"]
+            "project2_probability": row["project2_probability"],
+            "hybrid_score": row["hybrid_score"]
         })
 
     return pd.DataFrame(records)
@@ -215,7 +218,7 @@ def calculate_top_k_overlap(
         project2_top = set(
             group
             .sort_values(
-                "project2_probability",
+                "hybrid_score",
                 ascending=False
             )
             .head(k)["candidate"]
@@ -269,11 +272,12 @@ def calculate_top1_agreement(
         project2_best = (
             group
             .sort_values(
-                "project2_probability",
+                "hybrid_score",
                 ascending=False
             )
             .iloc[0]["candidate"]
         )
+
 
         agreements.append(
             project1_best
@@ -331,9 +335,7 @@ def main():
     print()
 
 
-    # --------------------------------------------------------
     # Project 1 scores
-    # --------------------------------------------------------
 
     test_df["project1_score"] = (
         test_df.apply(
@@ -351,9 +353,7 @@ def main():
     )
 
 
-    # --------------------------------------------------------
     # Load Project 2 model
-    # --------------------------------------------------------
 
     with open(
         MODEL_PATH,
@@ -375,9 +375,7 @@ def main():
         )
 
 
-    # --------------------------------------------------------
     # Project 2 probabilities
-    # --------------------------------------------------------
 
     X_test = test_df[
         FEATURES
@@ -393,14 +391,26 @@ def main():
         X_test_scaled
     )[:, 1]
 
+    # Final Project 2 Hybrid Score
 
-    # ========================================================
+    test_df["hybrid_score"] = (
+        0.50 * test_df["project1_normalized"]
+        + 0.50 * test_df["project2_probability"]
+    )
+
+
+
+
+
     # Basic score comparison
-    # ========================================================
 
     print("=" * 70)
     print("SCORE DISTRIBUTION")
     print("=" * 70)
+
+
+
+
 
     print()
 
@@ -410,8 +420,13 @@ def main():
     )
 
     print(
-        "Project 2 average probability: "
+        "ML Model average probability: "
         f"{test_df['project2_probability'].mean() * 100:.2f}%"
+    )
+
+    print(
+        "Final Hybrid average score: "
+        f"{test_df['hybrid_score'].mean() * 100:.2f}%"
     )
 
     print()
@@ -424,44 +439,65 @@ def main():
     )
 
     print(
-        "Project 2 probability range: "
+        "ML Model probability range: "
         f"{test_df['project2_probability'].min() * 100:.2f}%"
         " - "
         f"{test_df['project2_probability'].max() * 100:.2f}%"
     )
 
+    print(
+        "Final Hybrid score range: "
+        f"{test_df['hybrid_score'].min() * 100:.2f}%"
+        " - "
+        f"{test_df['hybrid_score'].max() * 100:.2f}%"
+    )
+
     print()
 
 
-    # ========================================================
     # Correlation
-    # ========================================================
 
-    correlation, p_value = spearmanr(
+    ml_correlation, ml_p_value = spearmanr(
         test_df["project1_score"],
         test_df["project2_probability"]
     )
 
-    print("=" * 70)
-    print("PROJECT 1 / PROJECT 2 RANK CORRELATION")
-    print("=" * 70)
+    hybrid_correlation, hybrid_p_value = spearmanr(
+        test_df["project1_score"],
+        test_df["hybrid_score"]
+    )
 
+    print("=" * 70)
+    print("RANK CORRELATION")
+    print("=" * 70)
     print()
 
     print(
-        f"Spearman correlation: {correlation:.4f}"
+        f"Project 1 vs ML Spearman:     "
+        f"{ml_correlation:.4f}"
     )
 
     print(
-        f"P-value: {p_value:.6f}"
+        f"Project 1 vs Hybrid Spearman: "
+        f"{hybrid_correlation:.4f}"
     )
+
+#    print(
+#        f"Hybrid P-value:               "
+#       f"{hybrid_p_value:.6f}"
+#    )
 
     print()
 
 
-    # ========================================================
+
+
     # Compare predictive discrimination
-    # ========================================================
+
+    print("=" * 70)
+    print("PREDICTIVE COMPARISON")
+    print("=" * 70)
+    print()    
 
     y_test = test_df[
         TARGET
@@ -477,36 +513,48 @@ def main():
         test_df["project2_probability"]
     )
 
-    print("=" * 70)
-    print("PREDICTIVE COMPARISON")
-    print("=" * 70)
-
-    print()
-
-    print(
-        f"Project 1 ROC-AUC: {project1_auc:.4f}"
-    )
-
-    print(
-        f"Project 2 ROC-AUC: {project2_auc:.4f}"
+    hybrid_auc = roc_auc_score(
+        y_test,
+        test_df["hybrid_score"]
     )
 
     latent_auc = roc_auc_score(
         y_test,
         test_df["simulated_probability"]
     )
+
+
     print(
-        f"Latent simulation probability ROC-AUC: "
+        f"Project 1 Rule-Based ROC-AUC: "
+        f"{project1_auc:.4f}"
+    )
+
+    print(
+        f"ML Model ROC-AUC:              "
+        f"{project2_auc:.4f}"
+    )
+
+    print(
+        f"Final Hybrid ROC-AUC:          "
+        f"{hybrid_auc:.4f}"
+    )
+
+    print(
+        f"Latent simulation ROC-AUC:     "
         f"{latent_auc:.4f}"
     )
+
     print()
 
     print(
-        "ROC-AUC difference (P2 - P1): "
+        "ML improvement over P1:       "
         f"{project2_auc - project1_auc:+.4f}"
     )
 
-    print()
+    print(
+        "Hybrid improvement over P1:   "
+        f"{hybrid_auc - project1_auc:+.4f}"
+    )
 
 
     # Ranking comparison
@@ -579,6 +627,7 @@ def main():
             "student_1_id",
             "student_2_id",
             TARGET,
+            "hybrid_score",
             "project1_score",
             "project2_probability"
         ]
@@ -592,13 +641,16 @@ def main():
         ] * 100
     )
 
+    examples["hybrid_score"] = (
+    examples["hybrid_score"] * 100
+)
+
     examples = examples.rename(
         columns={
             TARGET: "actual",
-            "project1_score":
-                "project1_percent",
-            "project2_probability":
-                "project2_percent"
+            "project1_score": "project1_percent",
+            "project2_probability": "ml_percent",
+            "hybrid_score": "hybrid_percent"
         }
     )
 
