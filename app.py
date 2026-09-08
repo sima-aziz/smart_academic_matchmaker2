@@ -17,7 +17,7 @@ from models import (db, Preferences,  User,
                     COMMITMENT_LEVELS, commitment_level_label,
                     CollaborationRequest,
                     ChatRoom, Message,
-                    Course, PreferenceCourse,
+                    Course, PreferenceCourse, UserNotification,
                     Report, ReportMessage, Block, AlgorithmSettings, seed_algorithm_settings)
 
 from matching import find_hybrid_matches
@@ -194,6 +194,29 @@ def is_blocked_between(user1_id, user2_id):
             db.and_(Block.blocker_id == user2_id, Block.blocked_id == user1_id)
         )
     ).first() is not None
+
+def create_user_notification(
+    user_id,
+    notification_type,
+    title,
+    body,
+    chat_id=None,
+    request_id=None
+):
+
+    notification = UserNotification(
+        user_id=user_id,
+        notification_type=notification_type,
+        title=title,
+        body=body,
+        chat_id=chat_id,
+        request_id=request_id
+    )
+
+    db.session.add(notification)
+
+    return notification
+
 
 def get_matching_weights():
 
@@ -956,6 +979,28 @@ def api_send_request(receiver_id):
         collaboration_request
     )
 
+    db.session.flush()
+
+
+    sender = db.session.get(
+        User,
+        sender_id
+    )
+
+
+    create_user_notification(
+        user_id=receiver_id,
+        notification_type="request_received",
+        title="طلب تعاون جديد",
+        body=(
+            f"{sender.first_name} "
+            f"{sender.last_name} "
+            "أرسل لك طلب تعاون."
+        ),
+        request_id=collaboration_request.id
+    )
+
+
     db.session.commit()
 
     return jsonify({
@@ -1131,6 +1176,26 @@ def api_accept_request(request_id):
         }), 400
 
     req.status = "accepted"
+
+
+    accepting_user = db.session.get(
+        User,
+        user_id
+    )
+
+
+    create_user_notification(
+        user_id=req.sender_id,
+        notification_type="request_accepted",
+        title="تم قبول طلب التعاون",
+        body=(
+            f"{accepting_user.first_name} "
+            f"{accepting_user.last_name} "
+            "وافق على طلب التعاون."
+        ),
+        request_id=req.id
+    )
+
 
     db.session.commit()
 
@@ -1408,6 +1473,27 @@ def api_send_chat_message(chat_id):
     chat.last_activity = db.func.now()
 
     db.session.add(message)
+
+
+    sender = db.session.get(
+        User,
+        user_id
+    )
+
+
+    create_user_notification(
+        user_id=other_user_id,
+        notification_type="message",
+        title=(
+            f"رسالة جديدة من "
+            f"{sender.first_name} "
+            f"{sender.last_name}"
+        ),
+        body=content[:120],
+        chat_id=chat.id
+    )
+
+
     db.session.commit()
 
     return jsonify({
@@ -1511,6 +1597,137 @@ def api_get_chats():
         "chats": result
     }), 200
 
+
+
+@app.route(
+    "/api/notifications",
+    methods=["GET"]
+)
+@jwt_required()
+def api_get_notifications():
+
+    user_id = int(
+        get_jwt_identity()
+    )
+
+    notifications = (
+        UserNotification.query
+        .filter_by(
+            user_id=user_id
+        )
+        .order_by(
+            UserNotification
+                .created_at
+                .desc()
+        )
+        .limit(50)
+        .all()
+    )
+
+    unread_count = (
+        UserNotification.query
+        .filter_by(
+            user_id=user_id,
+            is_read=False
+        )
+        .count()
+    )
+
+    return jsonify({
+        "success": True,
+        "unread_count": unread_count,
+
+        "notifications": [
+            {
+                "id": item.id,
+                "type":
+                    item.notification_type,
+                "title":
+                    item.title,
+                "body":
+                    item.body,
+                "chat_id":
+                    item.chat_id,
+                "request_id":
+                    item.request_id,
+                "is_read":
+                    item.is_read,
+                "created_at": (
+                    item.created_at.isoformat()
+                    if item.created_at
+                    else None
+                )
+            }
+            for item in notifications
+        ]
+    }), 200
+
+
+@app.route(
+    "/api/notifications/<int:notification_id>/read",
+    methods=["POST"]
+)
+@jwt_required()
+def api_mark_notification_read(
+    notification_id
+):
+
+    user_id = int(
+        get_jwt_identity()
+    )
+
+    notification = (
+        UserNotification.query
+        .filter_by(
+            id=notification_id,
+            user_id=user_id
+        )
+        .first()
+    )
+
+    if not notification:
+
+        return jsonify({
+            "success": False,
+            "message":
+                "Notification not found."
+        }), 404
+
+
+    notification.is_read = True
+
+    db.session.commit()
+
+
+    return jsonify({
+        "success": True
+    }), 200
+
+
+@app.route(
+    "/api/notifications/read-all",
+    methods=["POST"]
+)
+@jwt_required()
+def api_mark_all_notifications_read():
+
+    user_id = int(
+        get_jwt_identity()
+    )
+
+    UserNotification.query.filter_by(
+        user_id=user_id,
+        is_read=False
+    ).update({
+        "is_read": True
+    })
+
+    db.session.commit()
+
+
+    return jsonify({
+        "success": True
+    }), 200
 
 @app.route(
     "/api/account-status",

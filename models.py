@@ -40,6 +40,12 @@ class User(db.Model):
         cascade="all, delete-orphan"
     )
 
+    notifications = db.relationship(
+        "UserNotification",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(20), unique=True, nullable=False)
@@ -193,6 +199,63 @@ class Message(db.Model):
             Message.is_read == False
         ).count()
 
+
+class UserNotification(db.Model):
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "user.id",
+            ondelete="CASCADE"
+        ),
+        nullable=False,
+        index=True
+    )
+
+    notification_type = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    title = db.Column(
+        db.String(120),
+        nullable=False
+    )
+
+    body = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    chat_id = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    request_id = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
+    is_read = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=db.func.now()
+    )
+
+    user = db.relationship(
+        "User",
+        back_populates="notifications"
+    )
 
 class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
