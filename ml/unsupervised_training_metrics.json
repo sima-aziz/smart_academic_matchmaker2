@@ -1,0 +1,30 @@
+{
+  "learning_type": "unsupervised",
+  "target_column": null,
+  "synthetic_data_used": false,
+  "source_rows": 1194,
+  "usable_rows": 1184,
+  "dropped_rows_total": 10,
+  "semester_out_of_application_range_rows": 10,
+  "features": [
+    "age",
+    "gpa",
+    "academic_year"
+  ],
+  "scaling": "StandardScaler",
+  "model": "GaussianMixture",
+  "covariance_type": "spherical",
+  "n_components": 3,
+  "random_state": 42,
+  "silhouette": 0.40510025203299044,
+  "davies_bouldin": 0.7745045296868603,
+  "calinski_harabasz": 801.3919199296831,
+  "stability_ari": 1.0,
+  "average_membership_confidence": 0.928320605344218,
+  "cluster_sizes": {
+    "0": 41,
+    "1": 746,
+    "2": 397
+  },
+  "selection_note": "K=3 was selected after comparison with K-Means and GMM candidates. K=2 mostly isolated the small no-established-GPA profile while grouping the rest of the students together. K=3 retains that profile and separates earlier/mid from later academic profiles. Spherical covariance regularizes the model and soft GMM memberships support graded profile similarity."
+}

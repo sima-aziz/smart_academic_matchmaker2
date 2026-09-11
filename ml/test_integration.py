@@ -1,62 +1,66 @@
-from ml_matcher import predict_collaboration
+"""Functional sanity tests for the unsupervised ML matcher."""
 
-print("=" * 70)
-print("PROJECT 2 ML INTEGRATION TEST")
-print("=" * 70)
+try:
+    from ml.ml_matcher import explain_profile, profile_similarity
+except ModuleNotFoundError:
+    from ml_matcher import explain_profile, profile_similarity
 
 
-# High compatibility example
-features_high = {
-    "course_similarity": 0.8,
-    "gpa_similarity": 0.9,
-    "commitment_similarity": 0.8,
-    "age_similarity": 0.9,
-    "year_similarity": 0.8
-}
+print("=" * 78)
+print("PROJECT 2 UNSUPERVISED ML INTEGRATION TEST")
+print("=" * 78)
 
-probability_high = predict_collaboration(
-    features_high["course_similarity"],
-    features_high["gpa_similarity"],
-    features_high["commitment_similarity"],
-    features_high["age_similarity"],
-    features_high["year_similarity"]
+# 1) Identical academic profiles must have maximum similarity.
+identical = profile_similarity(
+    21, 3.20, 2,
+    21, 3.20, 2,
 )
 
-
-# Low compatibility example
-features_low = {
-    "course_similarity": 0.2,
-    "gpa_similarity": 0.2,
-    "commitment_similarity": 0.1,
-    "age_similarity": 0.3,
-    "year_similarity": 0.2
-}
-
-probability_low = predict_collaboration(
-    features_low["course_similarity"],
-    features_low["gpa_similarity"],
-    features_low["commitment_similarity"],
-    features_low["age_similarity"],
-    features_low["year_similarity"]
+# 2) A nearby profile.
+close = profile_similarity(
+    21, 3.20, 2,
+    22, 3.30, 2,
 )
 
-
-print()
-print(
-    f"High compatibility probability: "
-    f"{probability_high:.4f}"
+# 3) A profile at a substantially different academic stage.
+distant = profile_similarity(
+    21, 3.20, 2,
+    24, 3.20, 4,
 )
 
-print(
-    f"Low compatibility probability:  "
-    f"{probability_low:.4f}"
+# 4) Two similar advanced students.
+advanced_close = profile_similarity(
+    24, 3.50, 4,
+    23, 3.20, 4,
 )
 
 print()
+print(f"Identical profile similarity:       {identical:.4f}")
+print(f"Close profile similarity:           {close:.4f}")
+print(f"Distant-stage profile similarity:   {distant:.4f}")
+print(f"Advanced-close profile similarity:  {advanced_close:.4f}")
+print()
+print("Example membership vectors:")
+print("Profile A:", explain_profile(21, 3.20, 2))
+print("Profile B:", explain_profile(24, 3.20, 4))
+print()
 
-if probability_high > probability_low:
-    print("PASS: ML model behaves as expected.")
-else:
-    print("WARNING: Unexpected ML behavior.")
+checks = {
+    "identical_is_one": abs(identical - 1.0) < 1e-12,
+    "scores_in_range": all(
+        0.0 <= score <= 1.0
+        for score in [identical, close, distant, advanced_close]
+    ),
+    "close_exceeds_distant": close > distant,
+    "advanced_pair_is_high": advanced_close > 0.75,
+}
 
-print("=" * 70)
+for name, passed in checks.items():
+    print(f"{'PASS' if passed else 'FAIL'}: {name}")
+
+if not all(checks.values()):
+    raise SystemExit("One or more unsupervised matcher sanity checks failed.")
+
+print()
+print("PASS: Unsupervised profile similarity behaves as expected.")
+print("=" * 78)

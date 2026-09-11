@@ -36,6 +36,13 @@ load_dotenv()
 
 
 app = Flask(__name__)
+import os
+
+app.config["SECRET_KEY"] = os.environ.get(
+    "SECRET_KEY",
+    "smart-matchmaker-local-development-key"
+)
+
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "SMART_MATCHMAKER_DATABASE_URI",
     "sqlite:///app.db"
@@ -70,7 +77,6 @@ mail = Mail(app)
 
 db.init_app(app)
 jwt = JWTManager(app)
-app.secret_key = os.environ.get("SECRET_KEY")
 
 
 @jwt.token_in_blocklist_loader

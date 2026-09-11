@@ -1,12 +1,29 @@
-from models import Preferences
-from flask import current_app
+"""Matching logic for Smart Academic Matchmaker.
 
-from ml.ml_matcher import predict_collaboration
+Eligibility is enforced first through hard academic constraints.  Eligible
+pairs are then scored in two independent ways:
 
-# Must match the normalization used during ML training
-ML_MAX_SHARED_COURSES = 5
+1. Project 1 rule-based compatibility score.
+2. Project 2 unsupervised academic-profile similarity learned from real data.
+
+The deployed score is the agreed 50/50 hybrid of the normalized rule score and
+the unsupervised ML similarity.
+"""
+
+from ml.ml_matcher import profile_similarity
+
 
 def count_valid_shared_courses(p1, p2):
+    """Count shared courses that satisfy the current section rules.
+
+    Hard constraints kept unchanged from the existing system:
+    * same program
+    * same semester
+    * at least one shared course
+    * if both users allow cross-section collaboration, the course is valid;
+      otherwise their section must match
+    """
+
     if p1.program != p2.program:
         return 0
 
@@ -27,233 +44,83 @@ def count_valid_shared_courses(p1, p2):
         c1 = p1_courses[code]
         c2 = p2_courses[code]
 
-        # cross-section allowed
+        # Cross-section collaboration is valid only when both users allow it.
         if c1.cross_section and c2.cross_section:
             valid_count += 1
             continue
 
-        # otherwise must match section
+        # Otherwise both users must be in the same section.
         if c1.section == c2.section:
             valid_count += 1
 
     return valid_count
 
 
-# Calculate the five normalized ML features
+# ---------------------------------------------------------------------------
+# Project 1 rule-based score
+# ---------------------------------------------------------------------------
 
-def calculate_ml_features(p1, p2):
-    """
-    Extract the same five compatibility criteria used by
-    Project 1 and convert them into normalized similarity values.
-    """
-    # Shared courses
-    shared_courses = count_valid_shared_courses(
-        p1,
-        p2
-    )
-
-    course_similarity = min(
-        1,
-        shared_courses / ML_MAX_SHARED_COURSES
-    )
-
-
-    # GPA
-    gpa_diff = abs(
-        p1.gpa - p2.gpa
-    )
-
-    # Convert GPA difference to similarity
-    gpa_similarity = max(
-        0,
-        1 - (gpa_diff / 2)
-    )
-
-
-    # Commitment
-    time_diff = abs(
-        p1.commitment_level
-        - p2.commitment_level
-    )
-
-    commitment_similarity = max(
-        0,
-        1 - (time_diff / 4)
-    )
-
-
-    # Age
-    age_diff = abs(
-        p1.age - p2.age
-    )
-
-    # A difference of 12 years or more gives zero similarity.
-    age_similarity = max(
-        0,
-        1 - (age_diff / 12)
-    )
-
-
-    # Academic year
-    year_diff = abs(
-        p1.academic_year
-        - p2.academic_year
-    )
-
-    # Academic year ranges from 1 to 5,
-    year_similarity = max(
-        0,
-        1 - (year_diff / 4)
-    )
-
-
-    return {
-        "course_similarity": round(
-            course_similarity,
-            4
-        ),
-
-        "gpa_similarity": round(
-            gpa_similarity,
-            4
-        ),
-
-        "commitment_similarity": round(
-            commitment_similarity,
-            4
-        ),
-
-        "age_similarity": round(
-            age_similarity,
-            4
-        ),
-
-        "year_similarity": round(
-            year_similarity,
-            4
-        )
-    }
-
-
-# Project 1 - Dynamic Score Calculation
 def compatibility_score(p1, p2, weights):
-    score = 0
+    """Return the original rule-based score using the configured weights."""
 
-    # Count valid shared courses
-    shared_courses = count_valid_shared_courses(
-        p1,
-        p2
-    )
+    score = 0.0
+
+    shared_courses = count_valid_shared_courses(p1, p2)
 
     if shared_courses == 0:
-        return 0
+        return 0.0
 
-    # normalize course score
     max_possible_courses = weights["max_courses"]
 
     course_score = min(
         weights["courses"],
-        (
-            shared_courses
-            / max_possible_courses
-        ) * weights["courses"]
+        (shared_courses / max_possible_courses) * weights["courses"],
     )
-
     score += course_score
 
-    # GPA
-    gpa_diff = abs(
-        p1.gpa - p2.gpa
-    )
-
+    # GPA similarity: smaller difference keeps more of the GPA weight.
+    gpa_diff = abs(p1.gpa - p2.gpa)
     gpa_score = max(
-        0,
-        weights["gpa"] - (gpa_diff * 4)
+        0.0,
+        weights["gpa"] - (gpa_diff * 4),
     )
-
     score += gpa_score
 
-    # Commitment
-    time_diff = abs(
-        p1.commitment_level
-        - p2.commitment_level
+    # Commitment similarity.
+    commitment_diff = abs(
+        p1.commitment_level - p2.commitment_level
     )
-
     commitment_score = max(
-        0,
-        weights["commitment"] - time_diff
+        0.0,
+        weights["commitment"] - commitment_diff,
     )
-
     score += commitment_score
 
-    # Age
-    age_diff = abs(
-        p1.age - p2.age
-    )
-
+    # Age similarity.
+    age_diff = abs(p1.age - p2.age)
     age_score = max(
-        0,
-        weights["age"] - age_diff
+        0.0,
+        weights["age"] - age_diff,
     )
-
     score += age_score
 
-    # Academic year
+    # Academic-year similarity.
     year_diff = abs(
-        p1.academic_year
-        - p2.academic_year
+        p1.academic_year - p2.academic_year
     )
-
     year_score = max(
-        0,
-        weights["year"] - year_diff
+        0.0,
+        weights["year"] - year_diff,
     )
-
     score += year_score
 
-    return round(
-        score,
-        2
-    )
+    return round(score, 2)
 
 
-# Project 2 - ML Prediction
-def ml_compatibility_probability(
-    p1,
-    p2
-):
-    """
-    Calculate the ML probability for a pair
-    using the same five criteria as Project 1.
-    """
+def normalized_rule_score(p1, p2, weights):
+    """Normalize the Project 1 score to [0, 1] for hybrid combination."""
 
-    features = calculate_ml_features(
-        p1,
-        p2
-    )
-
-    probability = predict_collaboration(
-        features["course_similarity"],
-        features["gpa_similarity"],
-        features["commitment_similarity"],
-        features["age_similarity"],
-        features["year_similarity"]
-    )
-
-
-    return probability
-
-
-def normalized_rule_score(
-    p1,
-    p2,
-    weights
-):
-    rule_score = compatibility_score(
-        p1,
-        p2,
-        weights
-    )
+    rule_score = compatibility_score(p1, p2, weights)
 
     max_rule_score = (
         weights["courses"]
@@ -266,127 +133,109 @@ def normalized_rule_score(
     if max_rule_score <= 0:
         return 0.0
 
-    normalized_score = (
-        rule_score
-        / max_rule_score
-    )
-
-    return max(
-        0.0,
-        min(
-            1.0,
-            normalized_score
-        )
-    )
+    normalized = rule_score / max_rule_score
+    return max(0.0, min(1.0, normalized))
 
 
-def hybrid_compatibility_score(
-    p1,
-    p2,
-    weights
-):
-    rule_score = normalized_rule_score(
-        p1,
-        p2,
-        weights
+# ---------------------------------------------------------------------------
+# Project 2 unsupervised ML similarity
+# ---------------------------------------------------------------------------
+
+def ml_profile_similarity(p1, p2):
+    """Return learned academic-profile similarity in [0, 1].
+
+    The unsupervised model uses only fields that have direct equivalents in
+    both the real training data and the deployed application:
+
+        age, GPA, academic year
+
+    This value is NOT a probability that collaboration will succeed.
+    """
+
+    return profile_similarity(
+        p1.age,
+        p1.gpa,
+        p1.academic_year,
+        p2.age,
+        p2.gpa,
+        p2.academic_year,
     )
 
-    ml_probability = (
-        ml_compatibility_probability(
-            p1,
-            p2
-        )
-    )
+
+def hybrid_compatibility_score(p1, p2, weights):
+    """Return the agreed 50% rule-based + 50% unsupervised-ML score."""
+
+    # Keep the hard academic eligibility constraints in front of both scores.
+    if count_valid_shared_courses(p1, p2) == 0:
+        return 0.0
+
+    rule_score = normalized_rule_score(p1, p2, weights)
+    ml_similarity = ml_profile_similarity(p1, p2)
 
     hybrid_score = (
         0.50 * rule_score
-        + 0.50 * ml_probability
+        + 0.50 * ml_similarity
     )
 
-    return round(
-        hybrid_score,
-        4
-    )
+    return round(hybrid_score, 4)
 
-# Find matches
-def find_matches(
-    current_pref,
-    all_prefs,
-    weights
-):
+
+# ---------------------------------------------------------------------------
+# Ranking helpers
+# ---------------------------------------------------------------------------
+
+def find_matches(current_pref, all_prefs, weights):
+    """Return Project 1 rule-based matches (kept for baseline/debugging)."""
 
     matches = []
 
     for pref in all_prefs:
-
         if pref.user_id == current_pref.user_id:
             continue
 
         score = compatibility_score(
             current_pref,
             pref,
-            weights
+            weights,
         )
 
         if score == 0:
             continue
 
-        matches.append(
-            (
-                pref,
-                score
-            )
-        )
+        matches.append((pref, score))
 
     matches.sort(
-        key=lambda x: x[1],
-        reverse=True
+        key=lambda item: item[1],
+        reverse=True,
     )
 
     return matches
 
 
-def find_hybrid_matches(
-    current_pref,
-    all_prefs,
-    weights
-):
+def find_hybrid_matches(current_pref, all_prefs, weights):
+    """Return eligible candidates ranked by the final 50/50 hybrid score."""
 
     matches = []
 
     for pref in all_prefs:
-
         if pref.user_id == current_pref.user_id:
             continue
 
-        shared_courses = (
-            count_valid_shared_courses(
-                current_pref,
-                pref
-            )
-        )
-
-        if shared_courses == 0:
+        # Apply hard constraints before either scoring component.
+        if count_valid_shared_courses(current_pref, pref) == 0:
             continue
 
-        hybrid_score = (
-            hybrid_compatibility_score(
-                current_pref,
-                pref,
-                weights
-            )
+        hybrid_score = hybrid_compatibility_score(
+            current_pref,
+            pref,
+            weights,
         )
 
-        matches.append(
-            (
-                pref,
-                hybrid_score
-            )
-        )
+        matches.append((pref, hybrid_score))
 
     matches.sort(
-        key=lambda x: x[1],
-        reverse=True
+        key=lambda item: item[1],
+        reverse=True,
     )
 
     return matches
