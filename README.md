@@ -69,6 +69,8 @@ https://academicmatchmaker.pythonanywhere.com/
 
 The Android application communicates with the same Flask backend through REST APIs, allowing users to manage their profiles, view matches, handle collaboration requests, chat, and receive notifications from a mobile interface.
 
+[Download the latest Android APK](../../releases/latest)
+
 ## Author
 
 **Sima Aziz**  
