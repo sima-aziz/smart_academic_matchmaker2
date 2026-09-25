@@ -20,6 +20,26 @@ This project was developed as my graduation project in Information Technology En
 - Android application connected to the same backend
 - REST API with JWT authentication
 
+## Screenshots
+
+### Web Platform
+
+<p align="center">
+  <img src="docs/screenshots/web-matches.png" alt="Smart Academic Matchmaker web matching results" width="900">
+</p>
+
+### Android Application
+
+<p align="center">
+  <img src="docs/screenshots/android-matches.png" alt="Android matching results" width="260">
+  <img src="docs/screenshots/android-notifications.png" alt="Android notifications" width="260">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/android-chat.png" alt="Android chat" width="260">
+  <img src="docs/screenshots/android-menu.png" alt="Android navigation menu" width="260">
+</p>
+
 ## Matching Approach
 
 The final matching system combines two components:
